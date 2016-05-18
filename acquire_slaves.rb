@@ -20,8 +20,15 @@ Commander.configure do
     c.option '--fqdn FQDN', String, 'Domain Suffix (<slave-name>.some.internal.domain)'
     c.option '--port PORT', Integer, 'Port to connect to (22)'
     c.option '--mode MODE', String, 'NORMAL or EXCLUSIVE'
+    c.option '--home PATH', String, 'Path to jenkins home'
 
     c.action do |args, options|
+      unless options.username and options.token and options.jenkins
+        puts "At least specify username, token, and jenkins url."
+        puts "Run   rb acquire_slaves.rb --help move   for help."
+        exit 1
+      end
+
       jenkins = JenkinsApi::Client.new(
         :server_url => "https://#{options.jenkins}:443",
         :username   => options.username,
@@ -41,7 +48,7 @@ Commander.configure do
             "name" => name,
             "nodeDescription" => name,
             "numExecutors" => 1,
-            "remoteFS" => '/var/lib/jenkins',
+            "remoteFS" => options.home,
             "labelString" => options.label,
             "mode" => options.mode.upcase,
             "type" => "hudson.slaves.DumbSlave$DescriptorImpl",
@@ -70,12 +77,12 @@ Commander.configure do
         puts " > Running command remotely..."
 
         ssh = Net::SSH.start("#{name}.#{options.fqdn}", options.username, password: password)
-        ssh.exec cmd
+        ssh.exec "${cmd} &"
 
         jenkins.api_get_request("/computer/#{name}")
       end
 
-      slaves
+      pp  slaves
     end
 
   end
