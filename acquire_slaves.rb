@@ -77,12 +77,12 @@ Commander.configure do
         puts " > Running command remotely..."
 
         ssh = Net::SSH.start("#{name}.#{options.fqdn}", options.username, password: password)
-        ssh.exec "${cmd} &"
+        ssh.exec "sudo su jenkins -c \"cd ~; wget https://svt.jenkins.klarna.net/jnlpJars/slave.jar; ${cmd} &"
 
         jenkins.api_get_request("/computer/#{name}")
       end
 
-      pp  slaves
+      p slaves
     end
 
   end
